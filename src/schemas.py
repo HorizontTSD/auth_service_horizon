@@ -1,6 +1,11 @@
 # src/schemas.py
 from pydantic import BaseModel, EmailStr
-from typing import Optional
+from typing import Optional, List, Dict
+
+
+class PermissionsResponse(BaseModel):
+    permissions: List[str]
+
 
 class RegistrationRequest(BaseModel):
     organization_name: str
@@ -18,4 +23,3 @@ class RegistrationResponse(BaseModel):
     organization_id: int
     superuser_id: int
     message: str = "Организация и суперюзер успешно зарегистрированы"
-
