@@ -7,21 +7,13 @@ tables = TablesConfig()
 async def fetch_permissions_mapping():
     def sync_fetch():
         try:
-            conn = get_db_connection()
+            with get_db_connection() as conn:
+                with conn.cursor() as cursor:
+                    cursor.execute(f"SELECT code FROM {tables.PERMISSIONS}")
+                    rows = cursor.fetchall()
+                    return {"permissions": [row[0] for row in rows]}
         except Exception as e:
-            raise ConnectionError(f"Failed to connect to DB: {e}")
-        try:
-            cursor = conn.cursor()
-            cursor.execute(f"SELECT code FROM {tables.PERMISSIONS}")
-            rows = cursor.fetchall()
-            permission_list = [row[0] for row in rows]
-            return {
-                "permissions": permission_list
-            }
-        finally:
-            try:
-                conn.close()
-            except Exception:
-                pass
+            raise ConnectionError(f"DB operation failed: {e}")
 
     return await asyncio.to_thread(sync_fetch)
+
