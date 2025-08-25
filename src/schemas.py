@@ -12,3 +12,10 @@ class RegistrationRequest(BaseModel):
     superuser_password: str
     verify_superuser_email: Optional[bool] = False
     verify_organization_email: Optional[bool] = False
+
+
+class RegistrationResponse(BaseModel):
+    organization_id: int
+    superuser_id: int
+    message: str = "Организация и суперюзер успешно зарегистрированы"
+

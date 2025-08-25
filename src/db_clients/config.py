@@ -52,6 +52,12 @@ class TablesConfig:
         self.USER_ROLES = "user_roles"
 
 
+class RolesConfig:
+    def __init__(self):
+        self.SUPERUSER = "superuser"
+        self.ADMIN = "admin"
+        self.USER = "user"
+
 class DBSettings:
     def __init__(self):
         self.db = DBConfig()

@@ -1,12 +1,12 @@
 from fastapi import APIRouter, HTTPException, status, Body
-from src.schemas import RegistrationRequest
+from src.schemas import RegistrationRequest, RegistrationResponse
 from src.core.logger import logger
 from src.services.create_org_and_superuser import create_org_and_superuser
 
 
 router = APIRouter()
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
+@router.post("/", status_code=status.HTTP_201_CREATED, response_model=RegistrationResponse)
 async def register_organization_and_superuser(
         payload: RegistrationRequest = Body(
             ...,
@@ -32,17 +32,7 @@ async def register_organization_and_superuser(
     - Возвращает успешный ответ о регистрации.
     """
     try:
-        response = await create_org_and_superuser(
-            organization_name=payload.organization_name,
-            organization_email=payload.organization_email,
-            superuser_login=payload.superuser_login,
-            superuser_first_name=payload.superuser_first_name,
-            superuser_last_name=payload.superuser_last_name,
-            superuser_email=payload.superuser_email,
-            superuser_password=payload.superuser_password,
-            verify_superuser_email=payload.verify_superuser_email,
-            verify_organization_email=payload.verify_organization_email
-        )
+        response = await create_org_and_superuser(payload)
         return response
 
     except HTTPException as http_exc:
