@@ -10,16 +10,13 @@ async def fetch_permissions_mapping():
             conn = get_db_connection()
         except Exception as e:
             raise ConnectionError(f"Failed to connect to DB: {e}")
-
         try:
             cursor = conn.cursor()
-            cursor.execute(f"SELECT id, code, description FROM {tables.PERMISSIONS}")
+            cursor.execute(f"SELECT code FROM {tables.PERMISSIONS}")
             rows = cursor.fetchall()
-            permission_list = [row[1] for row in rows]
-            permission_mapping = {row[1]: row[0] for row in rows}
+            permission_list = [row[0] for row in rows]
             return {
-                "permission_list": permission_list,
-                "permission_mapping": permission_mapping
+                "permissions": permission_list
             }
         finally:
             try:

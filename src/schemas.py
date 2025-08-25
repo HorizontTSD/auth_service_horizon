@@ -1,7 +1,7 @@
 # src/schemas.py
 
 from pydantic import BaseModel
+from typing import List, Dict
 
-
-class HellowRequest(BaseModel):
-    names: list[str]
+class PermissionsResponse(BaseModel):
+    permissions: List[str]
