@@ -1,14 +1,13 @@
 from datetime import datetime, timedelta
 
-import jwt
 from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from sqlalchemy import or_, select
 
-from src.core.configuration.config import settings
 from src.models.user_models import RefreshToken, User
 from src.schemas import AuthResponse
 from src.session import db_manager
+from src.utils.refresh_access_tokens import create_access_token, create_refresh_token, revoke_existing_tokens
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -33,6 +32,8 @@ async def auth(login: str, password: str) -> AuthResponse:
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail='Пользователь заблокирован, удалён или неактивен'
             )
+        
+        await revoke_existing_tokens(session, user.id) # отзываем существующие refresh_token для этого пользователя
         
         access_token = await create_access_token(user.id)
         refresh_token = await create_refresh_token(user.id)
@@ -59,13 +60,3 @@ async def auth(login: str, password: str) -> AuthResponse:
                 "permissions": user.permissions
             }
         }
-
-async def create_access_token(user_id: int):
-    expires = datetime.now() + timedelta(minutes=15)
-    to_encode = {"sub": str(user_id), "exp": expires, "type": "access"}
-    return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
-
-async def create_refresh_token(user_id: int):
-    expires = datetime.utcnow() + timedelta(days=30)
-    to_encode = {"sub": str(user_id), "exp": expires, "type": "refresh"}
-    return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
