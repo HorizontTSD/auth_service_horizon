@@ -1,6 +1,7 @@
 # src/schemas.py
+from typing import List, Optional
+
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List, Dict
 
 
 class PermissionsResponse(BaseModel):
@@ -23,3 +24,26 @@ class RegistrationResponse(BaseModel):
     organization_id: int
     superuser_id: int
     message: str = "Организация и суперюзер успешно зарегистрированы"
+
+
+class AuthRequest(BaseModel):
+    login: str | EmailStr
+    password: str
+
+
+class UserAuthResponse(BaseModel):
+    id: int
+    organization_id: int
+    role: str
+    permission: list[str]
+
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str
+    expires_in: int
+    refresh_expires_in: int
+    user: UserAuthResponse
+

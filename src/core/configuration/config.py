@@ -19,6 +19,9 @@ class Settings:
         self.TOKENS_LIST = env.str('TOKENS_LIST')
         self.VERIFY_TOKEN = env.bool('VERIFY_TOKEN', True)
 
+        self.JWT_SECRET_KEY = env.str('JWT_SECRET_KEY', '')
+        self.JWT_ALGORITHM = env.str('JWT_ALGORITHM', 'HS256')
+
 
     def get_origins_urls(self):
         if self.PUBLIC_OR_LOCAL == 'PUBLIC':
