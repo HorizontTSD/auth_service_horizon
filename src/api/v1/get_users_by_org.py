@@ -2,28 +2,13 @@
 
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List
-from pydantic import BaseModel
 from src.core.logger import logger
 from src.core.token import token_validator
 from src.db_clients.clients import get_db_connection
+from src.schemas import UserResponse, GetUsersByOrgResponse
 
 router = APIRouter()
 
-# === Схемы Pydantic ===
-class UserResponse(BaseModel):
-    login: str
-    first_name: str
-    last_name: str
-    email: str
-    access_level: str  # например, 'admin'
-    permissions: List[str]
-
-
-class GetUsersByOrgResponse(BaseModel):
-    users: List[UserResponse]
-
-
-# === Вспомогательная функция: получение разрешений по роли ===
 def get_permissions_by_role(cursor, role_id: int) -> List[str]:
     cursor.execute("""
         SELECT p.code 
@@ -34,8 +19,6 @@ def get_permissions_by_role(cursor, role_id: int) -> List[str]:
     return [row[0] for row in cursor.fetchall()]
 
 
-# === Основной обработчик ===
-# === Основной обработчик ===
 @router.get(
     "/{organization_id}/users",
     response_model=GetUsersByOrgResponse,
@@ -48,7 +31,47 @@ async def get_users_by_organization(
     token: str = Depends(token_validator)
 ):
     """
-    Получение списка пользователей по organization_id из URL.
+    Эндпоинт для получения списка пользователей организации.
+
+    Description:
+    - Возвращает список активных пользователей указанной организации
+    - Для каждого пользователя показывает его роли и разрешения
+    - Поддерживает иерархию ролей через таблицу user_roles
+    - Фильтрует удаленных и неактивных пользователей
+
+    Parameters:
+    - **organization_id** (integer, path): ID организации для получения списка пользователей
+
+    Returns:
+    - **JSON**:
+      - `users`: Список пользователей организации
+        - `login`: Логин пользователя
+        - `first_name`: Имя пользователя
+        - `last_name`: Фамилия пользователя
+        - `email`: Email пользователя
+        - `access_level`: Уровень доступа (роль) пользователя
+        - `permissions`: Список разрешений пользователя
+
+    Example Response:
+    ```json
+    {
+      "users": [
+        {
+          "login": "ivanov",
+          "first_name": "Иван",
+          "last_name": "Иванов",
+          "email": "ivanov@example.com",
+          "access_level": "admin",
+          "permissions": ["user.view", "user.edit", "report.view"]
+        }
+      ]
+    }
+    ```
+
+    Raises:
+    - **HTTPException 401**: Если пользователь не авторизован (нет валидного токена)
+    - **HTTPException 404**: Если организация с указанным ID не найдена
+    - **HTTPException 500**: Если произошла ошибка при работе с базой данных
     """
     try:
         with get_db_connection() as conn:

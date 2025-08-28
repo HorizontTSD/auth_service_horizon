@@ -1,7 +1,7 @@
 # src/schemas.py
 from pydantic import BaseModel, EmailStr
 from typing import Optional, List, Dict
-
+from typing import Literal
 
 class PermissionsResponse(BaseModel):
     permissions: List[str]
@@ -25,3 +25,30 @@ class RegistrationResponse(BaseModel):
     access_token: str
     refresh_token: str
     message: str = "Организация и суперюзер успешно зарегистрированы"
+
+
+class UserResponse(BaseModel):
+    login: str
+    first_name: str
+    last_name: str
+    email: str
+    access_level: str  # например, 'admin'
+    permissions: List[str]
+
+
+class GetUsersByOrgResponse(BaseModel):
+    users: List[UserResponse]
+
+
+class RefreshRequest(BaseModel):
+    refresh_token: str
+
+
+class RefreshResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: Literal["Bearer"]
+    expires_in: int
+    refresh_expires_in: int
+
+

@@ -2,29 +2,17 @@
 
 from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Depends, Body
-from pydantic import BaseModel
-from typing import Literal
+
 import jwt
 import secrets
 import hashlib
 
+from src.schemas import RefreshRequest, RefreshResponse
 from src.core.logger import logger
 from src.db_clients.clients import get_db_connection
 from src.core.configuration.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
-
-# === Схемы ===
-class RefreshRequest(BaseModel):
-    refresh_token: str
-
-
-class RefreshResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: Literal["Bearer"]
-    expires_in: int
-    refresh_expires_in: int
 
 
 SECRET_KEY = settings.JWT_SECRET_KEY
@@ -54,7 +42,6 @@ def decode_jwt_token(token: str):
         raise HTTPException(status_code=401, detail="Invalid token")
 
 
-# === Основной эндпоинт ===
 @router.post(
     "/refresh",
     response_model=RefreshResponse,
@@ -69,6 +56,48 @@ def decode_jwt_token(token: str):
     """,
 )
 async def refresh_tokens(request: RefreshRequest = Body(...)):
+    """
+    Эндпоинт для обновления JWT токенов по refresh-токену.
+
+    Description:
+    - Реализует безопасную ротацию токенов с защитой от повторного использования
+    - Проверяет валидность и срок действия refresh-токена
+    - Отзывает использованный токен и выдает новую пару токенов
+    - Возвращает обновленные access и refresh токены
+
+    Parameters:
+    - **refresh_token** (string): Валидный refresh-токен пользователя
+
+    Returns:
+    - **JSON**:
+      - `access_token`: Новый JWT access-токен
+      - `refresh_token`: Новый JWT refresh-токен  
+      - `token_type`: Тип токена (Bearer)
+      - `expires_in`: Время жизни access-токена в секундах (15 минут)
+      - `refresh_expires_in`: Время жизни refresh-токена в секундах (30 дней)
+
+    Example Request:
+    ```json
+    {
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    ```
+
+    Example Response:
+    ```json
+    {
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "token_type": "Bearer",
+      "expires_in": 900,
+      "refresh_expires_in": 2592000
+    }
+    ```
+
+    Raises:
+    - **HTTPException 401**: Если refresh-токен недействителен, истек или отозван
+    - **HTTPException 500**: Если произошла ошибка при работе с базой данных
+    """
     refresh_token = request.refresh_token
 
     try:
@@ -134,7 +163,7 @@ async def refresh_tokens(request: RefreshRequest = Body(...)):
                 user_id,
                 new_refresh_token,
                 new_jti,
-                datetime.utcnow() + timedelta(days=30),  # Убираем strftime
+                datetime.utcnow() + timedelta(days=30),
                 datetime.utcnow(), 
             ))
             conn.commit()
