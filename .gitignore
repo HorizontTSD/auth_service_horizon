@@ -110,3 +110,8 @@ venv.bak/
 .idea/
 ./idea/
 .idea
+
+# Tokens and secrets
+tokens.csv
+tokens.yaml
+secrets/

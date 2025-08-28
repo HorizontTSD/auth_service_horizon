@@ -1,3 +1,4 @@
+# src/db_clients/clients.py
 import psycopg2
 from src.db_clients.config import DBConfig
 

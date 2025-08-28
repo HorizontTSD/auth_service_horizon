@@ -1,4 +1,4 @@
-# src/core/config.py
+# src/core/configuration/config.py
 import logging
 
 from environs import Env
