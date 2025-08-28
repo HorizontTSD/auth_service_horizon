@@ -35,6 +35,7 @@ def get_permissions_by_role(cursor, role_id: int) -> List[str]:
 
 
 # === Основной обработчик ===
+# === Основной обработчик ===
 @router.get(
     "/{organization_id}/users",
     response_model=GetUsersByOrgResponse,
@@ -49,68 +50,68 @@ async def get_users_by_organization(
     """
     Получение списка пользователей по organization_id из URL.
     """
-    conn = None
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
 
-        # Проверка существования организации
-        cursor.execute("SELECT id FROM organizations WHERE id = %s", (organization_id,))
-        if not cursor.fetchone():
-            raise HTTPException(
-                status_code=404,
-                detail=f"Организация с id={organization_id} не найдена."
-            )
-
-        # Получение пользователей организации (не удалённых, активных)
-        cursor.execute("""
-            SELECT u.id, u.login, u.first_name, u.last_name, u.email, u.role
-            FROM users u
-            WHERE u.organization_id = %s 
-              AND u.is_deleted = false 
-              AND u.is_active = true
-            ORDER BY u.created_at
-        """, (organization_id,))
-
-        users_data = cursor.fetchall()
-        users_response = []
-
-        for user_row in users_data:
-            user_id, login, first_name, last_name, email, role = user_row
-
-            # Получение ролей через user_roles
-            cursor.execute("""
-                SELECT r.id, r.name 
-                FROM user_roles ur
-                JOIN roles r ON ur.role_id = r.id
-                WHERE ur.user_id = %s
-            """, (user_id,))
-            roles = cursor.fetchall()
-
-            all_permissions = set()
-            if roles:
-                # Используем роли из user_roles
-                access_level = roles[0][1]  # первая роль
-                for role_id, _ in roles:
-                    perms = get_permissions_by_role(cursor, role_id)
-                    all_permissions.update(perms)
-            else:
-                # Fallback на поле role
-                access_level = role if role else "user"
-                all_permissions.update(["user.view", "user.list"])
-
-            users_response.append(
-                UserResponse(
-                    login=login,
-                    first_name=first_name,
-                    last_name=last_name,
-                    email=email,
-                    access_level=access_level,
-                    permissions=list(all_permissions)
+            # Проверка существования организации
+            cursor.execute("SELECT id FROM organizations WHERE id = %s", (organization_id,))
+            if not cursor.fetchone():
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Организация с id={organization_id} не найдена."
                 )
-            )
 
-        return GetUsersByOrgResponse(users=users_response)
+            # Получение пользователей организации (не удалённых, активных)
+            cursor.execute("""
+                SELECT u.id, u.login, u.first_name, u.last_name, u.email
+                FROM users u
+                WHERE u.organization_id = %s 
+                  AND u.is_deleted = false 
+                  AND u.is_active = true
+                ORDER BY u.created_at
+            """, (organization_id,))
+
+            users_data = cursor.fetchall()
+            users_response = []
+
+            for user_row in users_data:
+                user_id, login, first_name, last_name, email = user_row
+
+                # Получение ролей через user_roles
+                cursor.execute("""
+                    SELECT r.id, r.name 
+                    FROM user_roles ur
+                    JOIN roles r ON ur.role_id = r.id
+                    WHERE ur.user_id = %s
+                """, (user_id,))
+                roles = cursor.fetchall()
+
+                all_permissions = set()
+                access_level = "user"  # значение по умолчанию
+                
+                if roles:
+                    # Используем роли из user_roles
+                    access_level = roles[0][1]  # первая роль
+                    for role_id, _ in roles:
+                        perms = get_permissions_by_role(cursor, role_id)
+                        all_permissions.update(perms)
+                else:
+                    # Fallback если нет ролей
+                    all_permissions.update(["user.view", "user.list"])
+
+                users_response.append(
+                    UserResponse(
+                        login=login,
+                        first_name=first_name,
+                        last_name=last_name,
+                        email=email,
+                        access_level=access_level,
+                        permissions=list(all_permissions)
+                    )
+                )
+
+            return GetUsersByOrgResponse(users=users_response)
 
     except HTTPException:
         raise
@@ -120,9 +121,3 @@ async def get_users_by_organization(
             status_code=500,
             detail="Не удалось получить список пользователей. Повторите попытку позже."
         )
-    finally:
-        if conn:
-            try:
-                conn.close()
-            except Exception as ex:
-                logger.error(f"Ошибка при закрытии соединения с БД: {ex}")

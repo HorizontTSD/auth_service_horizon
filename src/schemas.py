@@ -22,4 +22,6 @@ class RegistrationRequest(BaseModel):
 class RegistrationResponse(BaseModel):
     organization_id: int
     superuser_id: int
+    access_token: str
+    refresh_token: str
     message: str = "Организация и суперюзер успешно зарегистрированы"

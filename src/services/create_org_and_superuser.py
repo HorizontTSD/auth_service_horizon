@@ -1,9 +1,13 @@
+# src/services/create_org_and_superuser.py
 import asyncio
+import secrets
+from datetime import timedelta, datetime
 from fastapi import HTTPException
 from src.db_clients.clients import get_db_connection
 from src.db_clients.config import TablesConfig, RolesConfig
 from src.schemas import RegistrationRequest
 from passlib.context import CryptContext
+from src.api.v1.auth_refresh import create_jwt_token, SECRET_KEY, ALGORITHM
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -84,16 +88,43 @@ async def create_org_and_superuser(payload: RegistrationRequest) -> dict:
                         (superuser_id, superuser_role_id)
                     )
 
+                    # Генерируем токены для нового пользователя
+                    access_token = create_jwt_token(
+                        subject=str(superuser_id),
+                        expires_delta=timedelta(minutes=15)
+                    )
+
+                    refresh_jti = secrets.token_urlsafe(32)
+                    refresh_token = create_jwt_token(
+                        subject=str(superuser_id),
+                        expires_delta=timedelta(days=30),
+                        additional_payload={"jti": refresh_jti}
+                    )
+
+                    # Сохраняем refresh токен в БД
+                    cur.execute("""
+                        INSERT INTO refresh_tokens (user_id, token, jti, expires_at, revoked, created_at)
+                        VALUES (%s, %s, %s, %s, false, %s)
+                    """, (
+                        superuser_id,
+                        refresh_token,
+                        refresh_jti,
+                        (datetime.utcnow() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S"),
+                        datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
+                    ))
+
                     conn.commit()
 
                     return {
                         "status": "success",
                         "organization_id": org_id,
                         "superuser_id": superuser_id,
+                        "access_token": access_token,
+                        "refresh_token": refresh_token,
                         "message": "Организация и суперюзер успешно зарегистрированы"
                     }
         except Exception:
-            conn.rollback()
+            # Note: контекстный менеджер автоматически откатит транзакцию
             raise
 
     return await asyncio.to_thread(sync_create)

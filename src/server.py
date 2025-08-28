@@ -14,7 +14,7 @@ from src.core.configuration.config import settings
 from src.core.logger import logger
 from src.api.api_routers import api_router
 from src.core.token import token_validator
-
+from src.schemas import RegistrationResponse
 
 API_PREFIX = "/" + settings.SERVICE_NAME
 
@@ -40,7 +40,7 @@ app = FastAPI(
     docs_url=docs_url,
     openapi_url="/openapi.json",
     root_path=API_PREFIX,
-    dependencies=[Depends(token_validator)] if settings.VERIFY_TOKEN else []
+    dependencies=[]
 )
 
 @app.exception_handler(RequestValidationError)

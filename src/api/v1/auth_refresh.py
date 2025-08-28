@@ -71,99 +71,92 @@ def decode_jwt_token(token: str):
 async def refresh_tokens(request: RefreshRequest = Body(...)):
     refresh_token = request.refresh_token
 
-    conn = None
     try:
-        conn = get_db_connection()
-        cursor = conn.cursor()
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
 
-        # Декодируем refresh-токен
-        try:
-            payload = decode_jwt_token(refresh_token)
-        except HTTPException as e:
-            logger.warning(f"Invalid or expired refresh token: {e.detail}")
-            raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
+            # Декодируем refresh-токен
+            try:
+                payload = decode_jwt_token(refresh_token)
+            except HTTPException as e:
+                logger.warning(f"Invalid or expired refresh token: {e.detail}")
+                raise HTTPException(status_code=401, detail="Invalid or expired refresh token")
 
-        jti = payload.get("jti")
-        user_id = payload.get("sub")
+            jti = payload.get("jti")
+            user_id = payload.get("sub")
 
-        if not jti or not user_id:
-            logger.warning("Missing jti or sub in refresh token")
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
+            if not jti or not user_id:
+                logger.warning("Missing jti or sub in refresh token")
+                raise HTTPException(status_code=401, detail="Invalid refresh token")
 
-        # Проверяем, существует ли refresh_token в БД и не отозван ли
-        cursor.execute("""
-            SELECT revoked, expires_at 
-            FROM refresh_tokens 
-            WHERE jti = %s AND user_id = %s
-        """, (jti, user_id))
+            # Проверяем, существует ли refresh_token в БД и не отозван ли
+            cursor.execute("""
+                SELECT revoked, expires_at 
+                FROM refresh_tokens 
+                WHERE jti = %s AND user_id = %s
+            """, (jti, user_id))
 
-        result = cursor.fetchone()
-        if not result:
-            logger.warning(f"Refresh token with jti={jti} not found in DB")
-            raise HTTPException(status_code=401, detail="Invalid refresh token")
+            result = cursor.fetchone()
+            if not result:
+                logger.warning(f"Refresh token with jti={jti} not found in DB")
+                raise HTTPException(status_code=401, detail="Invalid refresh token")
 
-        revoked, expires_at = result
-        if revoked:
-            logger.warning(f"Refresh token with jti={jti} is revoked")
-            raise HTTPException(status_code=401, detail="Refresh token revoked")
+            revoked, expires_at = result
+            if revoked:
+                logger.warning(f"Refresh token with jti={jti} is revoked")
+                raise HTTPException(status_code=401, detail="Refresh token revoked")
 
-        if datetime.strptime(expires_at, "%Y-%m-%d %H:%M:%S") < datetime.utcnow():
-            logger.warning(f"Refresh token with jti={jti} is expired")
-            raise HTTPException(status_code=401, detail="Refresh token expired")
+            if expires_at < datetime.utcnow():
+                logger.warning(f"Refresh token with jti={jti} is expired")
+                raise HTTPException(status_code=401, detail="Refresh token expired")
 
-        # Помечаем старый refresh как отозванный
-        cursor.execute("""
-            UPDATE refresh_tokens 
-            SET revoked = true 
-            WHERE jti = %s
-        """, (jti,))
-        conn.commit()
+            # Помечаем старый refresh как отозванный
+            cursor.execute("""
+                UPDATE refresh_tokens 
+                SET revoked = true 
+                WHERE jti = %s
+            """, (jti,))
+            conn.commit()
 
-        # Генерируем новый jti и refresh-токен
-        new_jti = secrets.token_urlsafe(32)
-        new_refresh_token = create_jwt_token(
-            subject=str(user_id),
-            expires_delta=timedelta(days=30),
-            additional_payload={"jti": new_jti}
-        )
+            # Генерируем новый jti и refresh-токен
+            new_jti = secrets.token_urlsafe(32)
+            new_refresh_token = create_jwt_token(
+                subject=str(user_id),
+                expires_delta=timedelta(days=30),
+                additional_payload={"jti": new_jti}
+            )
 
-        # Сохраняем новый refresh в БД
-        cursor.execute("""
-            INSERT INTO refresh_tokens (user_id, token, jti, expires_at, revoked, created_at)
-            VALUES (%s, %s, %s, %s, false, %s)
-        """, (
-            user_id,
-            new_refresh_token,
-            new_jti,
-            (datetime.utcnow() + timedelta(days=30)).strftime("%Y-%m-%d %H:%M:%S"),
-            datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S"),
-        ))
-        conn.commit()
+            # Сохраняем новый refresh в БД
+            cursor.execute("""
+                INSERT INTO refresh_tokens (user_id, token, jti, expires_at, revoked, created_at)
+                VALUES (%s, %s, %s, %s, false, %s)
+            """, (
+                user_id,
+                new_refresh_token,
+                new_jti,
+                datetime.utcnow() + timedelta(days=30),  # Убираем strftime
+                datetime.utcnow(), 
+            ))
+            conn.commit()
 
-        # Генерируем новый access-токен
-        new_access_token = create_jwt_token(
-            subject=str(user_id),
-            expires_delta=timedelta(minutes=15)
-        )
+            # Генерируем новый access-токен
+            new_access_token = create_jwt_token(
+                subject=str(user_id),
+                expires_delta=timedelta(minutes=15)
+            )
 
-        logger.info(f"Successfully refreshed tokens for user_id={user_id}")
+            logger.info(f"Successfully refreshed tokens for user_id={user_id}")
 
-        return {
-            "access_token": new_access_token,
-            "refresh_token": new_refresh_token,
-            "token_type": "Bearer",
-            "expires_in": 900,
-            "refresh_expires_in": 2592000
-        }
+            return {
+                "access_token": new_access_token,
+                "refresh_token": new_refresh_token,
+                "token_type": "Bearer",
+                "expires_in": 900,
+                "refresh_expires_in": 2592000
+            }
 
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error during token refresh: {e}", exc_info=True)
         raise HTTPException(status_code=500, detail="Internal server error")
-    finally:
-        if conn:
-            try:
-                conn.close()
-            except Exception as ex:
-                logger.error(f"Error closing DB connection: {ex}")
