@@ -3,7 +3,7 @@ from fastapi import APIRouter
 
 api_router = APIRouter()
 
-# 1. Проверка подключения
+# 1. Проверка подключения (есть в обеих)
 from src.api.v1.get_tables_info import router as get_tables_info_router
 api_router.include_router(get_tables_info_router, prefix="/tables-info", tags=["Check Test Connection"])
 
@@ -32,4 +32,11 @@ from src.api.v1.auth_refresh import router as auth_refresh_router
 api_router.include_router(
     auth_refresh_router,
     tags=["Auth"]
+)
+
+# 6. Регистрация пользователя в организации
+from src.api.v1.register_user import router as register_user_router
+api_router.include_router(
+    register_user_router,
+    tags=["Users"]
 )
