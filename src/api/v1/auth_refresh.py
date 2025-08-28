@@ -15,12 +15,10 @@ from src.core.configuration.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-# === Настройки JWT ===
-SECRET_KEY = "your-super-secret-jwt-key-change-in-production" 
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 15  # 900 секунд
-REFRESH_TOKEN_EXPIRE_DAYS = 30    # 2592000 секунд
-
+SECRET_KEY = settings.JWT_SECRET_KEY
+ALGORITHM = settings.JWT_ALGORITHM
+ACCESS_TOKEN_EXPIRE_MINUTES = settings.ACCESS_TOKEN_EXPIRE_MINUTES
+REFRESH_TOKEN_EXPIRE_DAYS = settings.REFRESH_TOKEN_EXPIRE_DAYS
 
 def create_jwt_token(subject: str, expires_delta: timedelta, additional_payload: dict = None):
     payload = {
