@@ -6,21 +6,9 @@ from pydantic import BaseModel
 from src.core.logger import logger
 from src.core.token import token_validator
 from src.db_clients.clients import get_db_connection
+from src.schemas import UserResponse, GetUsersByOrgResponse
 
 router = APIRouter()
-
-# === Схемы Pydantic ===
-class UserResponse(BaseModel):
-    login: str
-    first_name: str
-    last_name: str
-    email: str
-    access_level: str  # например, 'admin'
-    permissions: List[str]
-
-
-class GetUsersByOrgResponse(BaseModel):
-    users: List[UserResponse]
 
 
 # === Вспомогательная функция: получение разрешений по роли ===

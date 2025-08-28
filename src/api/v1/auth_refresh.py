@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from fastapi import APIRouter, HTTPException, Depends, Body
 from pydantic import BaseModel
 from typing import Literal
+from src.schemas import RefreshRequest, RefreshResponse
 import jwt
 import secrets
 import hashlib
@@ -14,21 +15,8 @@ from src.core.configuration.config import settings
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
-# === Схемы ===
-class RefreshRequest(BaseModel):
-    refresh_token: str
-
-
-class RefreshResponse(BaseModel):
-    access_token: str
-    refresh_token: str
-    token_type: Literal["Bearer"]
-    expires_in: int
-    refresh_expires_in: int
-
-
 # === Настройки JWT ===
-SECRET_KEY = "your-super-secret-jwt-key-change-in-production"  # ← замени в .env
+SECRET_KEY = "your-super-secret-jwt-key-change-in-production" 
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 15  # 900 секунд
 REFRESH_TOKEN_EXPIRE_DAYS = 30    # 2592000 секунд
@@ -91,7 +79,6 @@ async def refresh_tokens(request: RefreshRequest = Body(...)):
             logger.warning("Missing jti or sub in refresh token")
             raise HTTPException(status_code=401, detail="Invalid refresh token")
 
-        # Проверяем, существует ли refresh_token в БД и не отозван ли
         cursor.execute("""
             SELECT revoked, expires_at 
             FROM refresh_tokens 

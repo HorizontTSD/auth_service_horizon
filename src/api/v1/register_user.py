@@ -3,6 +3,7 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, EmailStr
 from typing import List, Optional
+from src.schemas import RegisterUserRequest, RegisterUserResponse
 import hashlib
 import secrets
 from datetime import datetime
@@ -13,23 +14,6 @@ from src.db_clients.clients import get_db_connection
 from src.core.configuration.config import settings
 
 router = APIRouter(prefix="/users", tags=["Users"])
-
-# === Схемы ===
-class RegisterUserRequest(BaseModel):
-    login: str
-    password: str
-    email: EmailStr
-    first_name: str
-    last_name: str
-    role: str 
-    permissions: Optional[List[str]] = None 
-
-
-class RegisterUserResponse(BaseModel):
-    success: bool
-    user_id: int
-    message: str
-
 
 # === Вспомогательные функции ===
 def hash_password(password: str) -> str:
