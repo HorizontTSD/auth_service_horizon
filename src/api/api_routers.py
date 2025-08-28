@@ -3,11 +3,11 @@ from fastapi import APIRouter
 
 api_router = APIRouter()
 
-# 1. Проверка подключения (есть в обеих)
+# 1. Проверка подключения
 from src.api.v1.get_tables_info import router as get_tables_info_router
 api_router.include_router(get_tables_info_router, prefix="/tables-info", tags=["Check Test Connection"])
 
-# 2. Регистрация организации и суперпользователя (из dev)
+# 2. Регистрация организации и суперпользователя 
 from src.api.v1.registration import router as register_organization_and_superuser
 api_router.include_router(
     register_organization_and_superuser,
@@ -15,7 +15,7 @@ api_router.include_router(
     tags=["Register Organization and Superuser"]
 )
 
-# 3. Получение маппинга прав (из dev)
+# 3. Получение маппинга прав 
 from src.api.v1.get_permissions_mapping import router as func_get_permissions_mapping
 api_router.include_router(
     func_get_permissions_mapping,
@@ -23,6 +23,13 @@ api_router.include_router(
     tags=["Permissions Mapping"]
 )
 
-# 4. Получение пользователей по организации (из ashakhova/task_554)
+# 4. Получение пользователей по организации
 from src.api.v1.get_users_by_org import router as get_users_by_org_router
 api_router.include_router(get_users_by_org_router, prefix="/organizations", tags=["Users"])
+
+# 5. Обновление токенов (refresh)
+from src.api.v1.auth_refresh import router as auth_refresh_router
+api_router.include_router(
+    auth_refresh_router,
+    tags=["Auth"]
+)

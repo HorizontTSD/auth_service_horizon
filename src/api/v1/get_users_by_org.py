@@ -36,9 +36,9 @@ def get_permissions_by_role(cursor, role_id: int) -> List[str]:
 
 # === Основной обработчик ===
 @router.get(
-    "/organizations/{organization_id}/users",
+    "/{organization_id}/users",
     response_model=GetUsersByOrgResponse,
-    summary="Получить пользователей организации",
+    summary="Get organization's users",
     description="Возвращает список активных пользователей указанной организации с их ролями и разрешениями.",
     tags=["Users"]
 )
