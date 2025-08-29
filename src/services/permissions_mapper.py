@@ -1,19 +1,37 @@
-import asyncio
-from src.db_clients.clients import get_db_connection
-from src.db_clients.config import TablesConfig
+from logging import getLogger
+from fastapi import HTTPException, status
+from sqlalchemy import select
+from sqlalchemy.exc import DatabaseError, SQLAlchemyError
 
-tables = TablesConfig()
+from src.models.user_models import Permission
+from src.session import db_manager
+
+logger = getLogger(__name__)
 
 async def fetch_permissions_mapping():
-    def sync_fetch():
-        try:
-            with get_db_connection() as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute(f"SELECT code FROM {tables.PERMISSIONS}")
-                    rows = cursor.fetchall()
-                    return {"permissions": [row[0] for row in rows]}
-        except Exception as e:
-            raise ConnectionError(f"DB operation failed: {e}")
+    try:
+        async with db_manager.get_db_session() as session:
+            query = select(Permission.code)
+            result = await session.execute(query)
+            rows = result.scalars().all()
+            return {"permissions": rows}
 
-    return await asyncio.to_thread(sync_fetch)
+    except DatabaseError:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Ошибка подключения к базе данных"
+        )
 
+    except SQLAlchemyError as e:
+        logger.error(f"Ошибка выполнения запроса к базе данных: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Ошибка выполнения запроса к базе данных"
+        )
+
+    except Exception as e:
+        logger.error(f"Внутренняя ошибка сервера: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Внутренняя ошибка сервера"
+        )

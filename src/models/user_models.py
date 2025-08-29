@@ -8,7 +8,7 @@ from src.models.base_model import ORMBase
 from src.models.organization_models import Organization  # noqa: E402
 
 # Таблица связи многие-ко-многим для пользователей и ролей
-user_roles = Table(
+UserRoles = Table(
     db_settings.tables.USER_ROLES,
     ORMBase.metadata,
     Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
@@ -16,7 +16,7 @@ user_roles = Table(
 )
 
 # Таблица связи многие-ко-многим для ролей и разрешений
-role_permissions = Table(
+RolePermissions = Table(
     db_settings.tables.ROLE_PERMISSIONS,
     ORMBase.metadata,
     Column('role_id', Integer, ForeignKey('roles.id'), primary_key=True),
@@ -51,7 +51,7 @@ class User(ORMBase):
 
     roles: Mapped[list['Role']] = relationship(
         'Role',
-        secondary=user_roles,
+        secondary=UserRoles,
         back_populates='users',
         lazy='selectin'
     )
@@ -78,13 +78,13 @@ class Role(ORMBase):
 
     users: Mapped[list['User']] = relationship(
         'User',
-        secondary=user_roles,
+        secondary=UserRoles,
         back_populates='roles',
     )
 
     permissions: Mapped[list['Permission']] = relationship(
         'Permission',
-        secondary=role_permissions,
+        secondary=RolePermissions,
         back_populates='roles',
         lazy='selectin'
     )
@@ -99,6 +99,15 @@ class Permission(ORMBase):
 
     roles: Mapped[list['Role']] = relationship(
         'Role',
-        secondary=role_permissions,
+        secondary=RolePermissions,
         back_populates='permissions',
     )
+
+class Tables:
+    def __init__(self):
+        self.User = User
+        self.Role = Role
+        self.Permission = Permission
+        self.RefreshToken = RefreshToken
+        self.UserRoles = UserRoles
+        self.RolePermissions = RolePermissions
