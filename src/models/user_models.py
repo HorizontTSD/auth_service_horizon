@@ -3,11 +3,12 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from models.base_model import BaseModel
-from db_clients.config import db_settings
+from src.db_clients.config import db_settings
+from src.models.base_model import ORMBase
+from src.models.organization_models import Organization  # noqa: E402
 
 
-class User(BaseModel):
+class User(ORMBase):
     __tablename__ = db_settings.tables.USERS
     
     organization_id: Mapped[int] = mapped_column(ForeignKey('organizations.id'))
@@ -24,10 +25,15 @@ class User(BaseModel):
     is_deleted: Mapped[bool] = mapped_column(Boolean, default=False)
 
     refresh_tokens: Mapped[list['RefreshToken']] = relationship('RefreshToken', back_populates='user')
-    organization: Mapped['Organization'] = relationship('Organization', back_populates='users')
+    organization: Mapped['Organization'] = relationship(
+        'Organization',
+        back_populates='users',
+        foreign_keys=[organization_id],
+        primaryjoin='User.organization_id == Organization.id',
+    )
 
 
-class RefreshToken(BaseModel):
+class RefreshToken(ORMBase):
     __tablename__ = db_settings.tables.REFRESH_TOKENS
     
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))

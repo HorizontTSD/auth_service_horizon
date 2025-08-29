@@ -1,17 +1,18 @@
 from datetime import datetime, timedelta
+from logging import getLogger
 
+import jwt
 from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from sqlalchemy import or_, select
 from sqlalchemy.exc import DatabaseError, SQLAlchemyError
-import jwt
 
 from src.models.user_models import RefreshToken, User
 from src.schemas import AuthResponse
 from src.session import db_manager
 from src.utils.refresh_access_tokens import create_access_token, create_refresh_token, revoke_existing_tokens
 
-
+logger = getLogger(__name__)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def auth(login: str, password: str) -> AuthResponse:
@@ -67,25 +68,29 @@ async def auth(login: str, password: str) -> AuthResponse:
     except HTTPException:
         raise
     
-    except DatabaseError as e:
+    except DatabaseError:
+        # логируется в src/session.py
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail='Ошибка подключения к базе данных'
         )
     
     except SQLAlchemyError as e:
+        logger.error(f"Ошибка выполнения запроса к базе данных: {e}") 
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail='Ошибка выполнения запроса к базе данных'
         )
     
     except jwt.PyJWTError as e:
+        logger.error(f"Ошибка создания токенов: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail='Ошибка создания токенов'
         )
     
     except Exception as e:
+        logger.error(f"Внутренняя ошибка сервера: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail='Внутренняя ошибка сервера'

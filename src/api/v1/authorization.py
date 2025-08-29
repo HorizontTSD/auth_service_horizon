@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Body
 
 from services.auth_service import auth
 from src.schemas import AuthRequest, AuthResponse
@@ -7,7 +7,12 @@ router = APIRouter()
 
 
 @router.post('/', response_model=AuthResponse)
-async def auth_user(auth_data: AuthRequest = Depends(AuthRequest)) -> AuthResponse:
+async def auth_user(
+        auth_data: AuthRequest = Body(..., example={
+                'login': 'Логин пользователя',
+                'password': 'Пароль пользователя'
+        })
+        ) -> AuthResponse:
         """
         Эндпоинт для авторизации пользователей приложения
 

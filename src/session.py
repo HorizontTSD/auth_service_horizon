@@ -21,7 +21,7 @@ class DBManager:
                 yield session
             except DatabaseError as e:
                 await session.rollback()
-                logger.error(f'Ошибка сессии: {e}')
+                logger.error(f'Ошибка подключения к базе данных: {e}')
                 raise
             finally:
                 await session.close()
