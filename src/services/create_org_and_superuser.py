@@ -68,7 +68,7 @@ async def create_org_and_superuser(payload: RegistrationRequest) -> dict:
                 )
                 org_id = cur.fetchone()[0]
 
-                superuser_hashed_password = pwd_context.hash(superuser_password)
+                superuser_hashed_password = hash_password(superuser_password)
 
                 cur.execute(
                     f"""
