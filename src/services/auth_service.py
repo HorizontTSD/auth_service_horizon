@@ -3,7 +3,7 @@ from logging import getLogger
 
 import jwt
 from fastapi import HTTPException, status
-from passlib.context import CryptContext
+from src.core.security.password import verify_password
 from sqlalchemy import or_, select
 from sqlalchemy.exc import DatabaseError, SQLAlchemyError
 
@@ -13,7 +13,6 @@ from src.session import db_manager
 from src.utils.refresh_access_tokens import create_access_token, create_refresh_token, revoke_existing_tokens
 
 logger = getLogger(__name__)
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 async def auth(login: str, password: str) -> AuthResponse:
     try:
@@ -25,7 +24,7 @@ async def auth(login: str, password: str) -> AuthResponse:
             result = await session.execute(query)
             user = result.scalar_one_or_none()
 
-            if not user or not pwd_context.verify(password, user.password):
+            if not user or not verify_password(password, user.password):
                 raise HTTPException(
                     status_code=status.HTTP_401_UNAUTHORIZED,
                     detail='Неверные учётные данные'
@@ -40,11 +39,12 @@ async def auth(login: str, password: str) -> AuthResponse:
             await revoke_existing_tokens(session, user.id) # отзываем существующие refresh_token для этого пользователя
             
             access_token = await create_access_token(user.id)
-            refresh_token = await create_refresh_token(user.id)
+            refresh_token, refresh_jti = await create_refresh_token(user.id)
 
             db_refresh_token = RefreshToken(
                 user_id=user.id,
                 token=refresh_token,
+                jti=refresh_jti,
                 expires_at=datetime.utcnow() + timedelta(days=30)
             )
 
@@ -60,12 +60,13 @@ async def auth(login: str, password: str) -> AuthResponse:
                 "user": {
                     "id": user.id,
                     "organization_id": user.organization_id,
-                    "role": user.role,
-                    "permissions": user.permissions
+                    "roles": [role.name for role in user.roles],
+                    "permissions": [permission.code for role in user.roles for permission in role.permissions]
                 }
             }
     
-    except HTTPException:
+    except HTTPException as e:
+        logger.error(f"Ошибка: {e.detail}")
         raise
     
     except DatabaseError:

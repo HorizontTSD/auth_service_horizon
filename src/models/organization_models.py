@@ -1,5 +1,7 @@
 
-from sqlalchemy import ForeignKey, String
+from datetime import datetime
+
+from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from src.db_clients.config import db_settings
@@ -11,7 +13,9 @@ class Organization(ORMBase):
 
     name: Mapped[str] = mapped_column(String)
     email: Mapped[str] = mapped_column(String)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
     owner_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
+    
     
     # Явная связь с владельцем организации, чтобы избежать неоднозначности
     owner: Mapped['User'] = relationship(

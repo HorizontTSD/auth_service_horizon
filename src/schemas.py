@@ -34,8 +34,8 @@ class AuthRequest(BaseModel):
 class UserAuthResponse(BaseModel):
     id: int
     organization_id: int
-    role: str
-    permission: list[str]
+    roles: list[str]
+    permissions: list[str]
 
 
 

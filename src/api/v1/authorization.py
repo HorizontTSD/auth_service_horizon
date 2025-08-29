@@ -9,8 +9,8 @@ router = APIRouter()
 @router.post('/', response_model=AuthResponse)
 async def auth_user(
         auth_data: AuthRequest = Body(..., example={
-                'login': 'user_login',
-                'password': 'user_password'
+                'login': 'test_user',
+                'password': 'qwerty123'
         })
         ) -> AuthResponse:
         """
@@ -29,7 +29,7 @@ async def auth_user(
             - `user`: {
                     `id`: id пользователя
                     `organization_id`: id организации пользователя
-                    `role`: роль пользователя
+                    `roles`: роли пользователя
                     `permissions`: права пользователя
                 }
 
@@ -44,7 +44,7 @@ async def auth_user(
                 "user": {
                     "id": 123,
                     "organization_id": 1,
-                    "role": "admin",
+                    "roles": ["admin", ...],
                     "permissions": [...]
             }
         ```
