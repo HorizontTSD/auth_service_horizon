@@ -3,9 +3,8 @@ from fastapi import HTTPException
 from src.db_clients.clients import get_db_connection
 from src.db_clients.config import TablesConfig, RolesConfig
 from src.schemas import RegistrationRequest
-from passlib.context import CryptContext
+from src.core.security.password import hash_password
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 tables = TablesConfig()
 roles = RolesConfig()
@@ -34,6 +33,7 @@ async def create_org_and_superuser(payload: RegistrationRequest) -> dict:
                         status_code=409,
                         detail=f"Суперюзер с логином {superuser_login} уже существует"
                     )
+
 
 
                 if verify_organization_email:
@@ -68,7 +68,7 @@ async def create_org_and_superuser(payload: RegistrationRequest) -> dict:
                 )
                 org_id = cur.fetchone()[0]
 
-                superuser_hashed_password = pwd_context.hash(superuser_password)
+                superuser_hashed_password = hash_password(superuser_password)
 
                 cur.execute(
                     f"""
