@@ -6,7 +6,7 @@ from src.schemas import AuthRequest, AuthResponse
 router = APIRouter()
 
 
-@router.post('/')
+@router.post('/', response_model=AuthResponse)
 async def auth_user(auth_data: AuthRequest = Depends(AuthRequest)) -> AuthResponse:
         """
         Эндпоинт для авторизации пользователей приложения
@@ -26,6 +26,15 @@ async def auth_user(auth_data: AuthRequest = Depends(AuthRequest)) -> AuthRespon
                     `organization_id`: id организации пользователя
                     `role`: роль пользователя
                     `permissions`: права пользователя
+                }
+
+        Example Request:
+        ```json
+            {
+                "login": "user",
+                "password": "qwerty123"
+            }
+        ```
 
         Example Response:
         ```json
@@ -44,9 +53,12 @@ async def auth_user(auth_data: AuthRequest = Depends(AuthRequest)) -> AuthRespon
         ```
 
         Raises:
+        - **HTTPException 400**: При ошибке валидации входных данных
         - **HTTPException 401**: При неверных учётных данных
         - **HTTPException 401**: Если пользователь заблокирован, удалён или неактивен
-        - **HTTPException 500**: Если произошла ошибка при подключении к базе или авторизации.
+        - **HTTPException 500**: При ошибке создания JWT токенов
+        - **HTTPException 500**: При ошибке выполнения SQL запросов
+        - **HTTPException 503**: При ошибке подключения к базе данных
         """
         
         return await auth(login=auth_data.login, password=auth_data.password)

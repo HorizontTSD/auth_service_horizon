@@ -4,13 +4,13 @@ from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base_model import BaseModel
+from db_clients.config import db_settings
 
 
 class Organization(BaseModel):
-    __tablename__ = 'organizations'
+    __tablename__ = db_settings.tables.ORGANIZATIONS
 
     name: Mapped[str] = mapped_column(String)
-    created_at = Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
     email = Mapped[str] = mapped_column(String)
     owner_id = Mapped[int] = mapped_column(ForeignKey('user.id'))
 

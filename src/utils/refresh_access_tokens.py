@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 import jwt
-from sqlalchemy.orm import update
+from sqlalchemy import update
 
 from src.core.configuration.config import settings
 from src.models.user_models import RefreshToken

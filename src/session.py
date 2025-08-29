@@ -22,6 +22,7 @@ class DBManager:
             except DatabaseError as e:
                 await session.rollback()
                 logger.error(f'Ошибка сессии: {e}')
+                raise
             finally:
                 await session.close()
         

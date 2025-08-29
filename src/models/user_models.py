@@ -4,10 +4,11 @@ from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from models.base_model import BaseModel
+from db_clients.config import db_settings
 
 
 class User(BaseModel):
-    __tablename__ = "users"
+    __tablename__ = db_settings.tables.USERS
     
     organization_id: Mapped[int] = mapped_column(ForeignKey('organizations.id'))
     login: Mapped[str] = mapped_column(String)
@@ -16,7 +17,6 @@ class User(BaseModel):
     nickname: Mapped[str | None] = mapped_column(String)
     email: Mapped[str] = mapped_column(String)
     password: Mapped[str] = mapped_column(String)
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
     last_activity: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
@@ -28,12 +28,11 @@ class User(BaseModel):
 
 
 class RefreshToken(BaseModel):
-    __tablename__ = "refresh_tokens"
+    __tablename__ = db_settings.tables.REFRESH_TOKENS
     
     user_id: Mapped[int] = mapped_column(ForeignKey('users.id'))
     token: Mapped[str] = mapped_column(String)
     jti: Mapped[str] = mapped_column(String(255))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
 
