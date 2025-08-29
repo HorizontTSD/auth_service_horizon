@@ -33,14 +33,6 @@ async def auth_user(
                     `permissions`: права пользователя
                 }
 
-        Example Request:
-        ```json
-            {
-                "login": "user",
-                "password": "qwerty123"
-            }
-        ```
-
         Example Response:
         ```json
             {
