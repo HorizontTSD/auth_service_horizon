@@ -35,15 +35,12 @@ class User(ORMBase):
     email: Mapped[str] = mapped_column(String)
     password: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
-    # updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
-    # updated_at = Column(DateTime(timezone=True), default=func.now(), onupdate=func.now(), nullable=False)
     updated_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False
     )
-
     last_activity: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
