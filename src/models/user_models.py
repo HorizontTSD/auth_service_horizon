@@ -8,7 +8,7 @@ from src.models.base_model import ORMBase
 from src.models.organization_models import Organization  # noqa: E402
 
 # Таблица связи многие-ко-многим для пользователей и ролей
-user_roles = Table(
+UserRoles = Table(
     db_settings.tables.USER_ROLES,
     ORMBase.metadata,
     Column('user_id', Integer, ForeignKey('users.id'), primary_key=True),
@@ -16,7 +16,7 @@ user_roles = Table(
 )
 
 # Таблица связи многие-ко-многим для ролей и разрешений
-role_permissions = Table(
+RolePermissions = Table(
     db_settings.tables.ROLE_PERMISSIONS,
     ORMBase.metadata,
     Column('role_id', Integer, ForeignKey('roles.id'), primary_key=True),
@@ -35,7 +35,12 @@ class User(ORMBase):
     email: Mapped[str] = mapped_column(String)
     password: Mapped[str] = mapped_column(String)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=func.now())
-    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), onupdate=func.now())
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+        nullable=False
+    )
     last_activity: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     is_blocked: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -51,7 +56,7 @@ class User(ORMBase):
 
     roles: Mapped[list['Role']] = relationship(
         'Role',
-        secondary=user_roles,
+        secondary=UserRoles,
         back_populates='users',
         lazy='selectin'
     )
@@ -78,13 +83,13 @@ class Role(ORMBase):
 
     users: Mapped[list['User']] = relationship(
         'User',
-        secondary=user_roles,
+        secondary=UserRoles,
         back_populates='roles',
     )
 
     permissions: Mapped[list['Permission']] = relationship(
         'Permission',
-        secondary=role_permissions,
+        secondary=RolePermissions,
         back_populates='roles',
         lazy='selectin'
     )
@@ -99,6 +104,15 @@ class Permission(ORMBase):
 
     roles: Mapped[list['Role']] = relationship(
         'Role',
-        secondary=role_permissions,
+        secondary=RolePermissions,
         back_populates='permissions',
     )
+
+class Tables:
+    def __init__(self):
+        self.User = User
+        self.Role = Role
+        self.Permission = Permission
+        self.RefreshToken = RefreshToken
+        self.UserRoles = UserRoles
+        self.RolePermissions = RolePermissions
