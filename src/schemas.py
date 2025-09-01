@@ -1,5 +1,8 @@
 # src/schemas.py
+from typing import List, Optional
+
 from pydantic import BaseModel, EmailStr
+
 from typing import Optional, List, Dict
 from typing import Literal
 
@@ -51,4 +54,23 @@ class RefreshResponse(BaseModel):
     expires_in: int
     refresh_expires_in: int
 
+class AuthRequest(BaseModel):
+    login: str | EmailStr
+    password: str
 
+
+class UserAuthResponse(BaseModel):
+    id: int
+    organization_id: int
+    roles: list[str]
+    permissions: list[str]
+
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    refresh_token: str
+    token_type: str
+    expires_in: int
+    refresh_expires_in: int
+    user: UserAuthResponse
