@@ -30,6 +30,48 @@ router = APIRouter(prefix="/auth", tags=["Auth"])
     """,
 )
 async def refresh_tokens(request: RefreshRequest = Body(...)):
+    """
+    Эндпоинт для обновления JWT токенов по refresh-токену.
+
+    Description:
+    - Реализует безопасную ротацию токенов с защитой от повторного использования
+    - Проверяет валидность и срок действия refresh-токена
+    - Отзывает использованный токен и выдает новую пару токенов
+    - Возвращает обновленные access и refresh токены
+
+    Parameters:
+    - **refresh_token** (string): Валидный refresh-токен пользователя
+
+    Returns:
+    - **JSON**:
+      - `access_token`: Новый JWT access-токен
+      - `refresh_token`: Новый JWT refresh-токен  
+      - `token_type`: Тип токена (Bearer)
+      - `expires_in`: Время жизни access-токена в секундах (15 минут)
+      - `refresh_expires_in`: Время жизни refresh-токена в секундах (30 дней)
+
+    Example Request:
+    ```json
+    {
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+    }
+    ```
+
+    Example Response:
+    ```json
+    {
+      "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+      "token_type": "Bearer",
+      "expires_in": 900,
+      "refresh_expires_in": 2592000
+    }
+    ```
+
+    Raises:
+    - **HTTPException 401**: Если refresh-токен недействителен, истек или отозван
+    - **HTTPException 500**: Если произошла ошибка при работе с базой данных
+    """
     refresh_token = request.refresh_token
 
     try:

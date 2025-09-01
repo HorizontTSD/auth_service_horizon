@@ -9,15 +9,61 @@ from src.core.logger import logger
 
 router = APIRouter()
 
-@router.get("/{organization_id}/users", response_model=GetUsersByOrgResponse)
+
+@router.get(
+    "/{organization_id}/users",
+    response_model=GetUsersByOrgResponse,
+    summary="Get organization's users",
+    description="Возвращает список активных пользователей указанной организации с их ролями и разрешениями.",
+    tags=["Users"]
+)
 async def get_users_by_organization(
     organization_id: int,
     user: dict = Depends(jwt_token_validator)
 ):
     """
-    Получение списка пользователей организации.
-    Доступно только авторизованным пользователям.
-    Пользователь должен принадлежать к этой организации.
+    Эндпоинт для получения списка пользователей организации.
+
+    Description:
+    - Возвращает список активных пользователей указанной организации
+    - Для каждого пользователя показывает его роли и разрешения
+    - Поддерживает иерархию ролей через таблицу user_roles
+    - Фильтрует удаленных и неактивных пользователей
+
+    Parameters:
+    - **organization_id** (integer, path): ID организации для получения списка пользователей
+
+    Returns:
+    - **JSON**:
+      - `users`: Список пользователей организации
+        - `login`: Логин пользователя
+        - `first_name`: Имя пользователя
+        - `last_name`: Фамилия пользователя
+        - `email`: Email пользователя
+        - `access_level`: Уровень доступа (роль) пользователя
+        - `permissions`: Список разрешений пользователя
+
+    Example Response:
+    ```json
+    {
+      "users": [
+        {
+          "login": "ivanov",
+          "first_name": "Иван",
+          "last_name": "Иванов",
+          "email": "ivanov@example.com",
+          "access_level": "admin",
+          "permissions": ["user.view", "user.edit", "report.view"]
+        }
+      ]
+    }
+    ```
+
+    Raises:
+    - **HTTPException 401**: Если пользователь не авторизован (нет валидного токена)
+    - **HTTPException 403**: Если пользователь не имеет доступа к организации
+    - **HTTPException 404**: Если организация с указанным ID не найдена
+    - **HTTPException 500**: Если произошла ошибка при работе с базой данных
     """
     current_user_org_id = user["organization_id"]
 
