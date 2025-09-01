@@ -1,3 +1,4 @@
+# src/services/auth_service.py
 from datetime import datetime, timedelta
 from logging import getLogger
 
@@ -37,8 +38,13 @@ async def auth(login: str, password: str) -> AuthResponse:
                 )
             
             await revoke_existing_tokens(session, user.id) # отзываем существующие refresh_token для этого пользователя
-            
-            access_token = await create_access_token(user.id)
+
+
+            access_token = await create_access_token(
+                user.id,
+                user.organization_id,
+                [role.name for role in user.roles]  
+            )
             refresh_token, refresh_jti = await create_refresh_token(user.id)
 
             db_refresh_token = RefreshToken(

@@ -13,7 +13,7 @@ from fastapi.security import HTTPBearer
 from src.core.configuration.config import settings
 from src.core.logger import logger
 from src.api.api_routers import api_router
-from src.core.token import token_validator
+from src.core.token import static_token_validator
 from src.schemas import RegistrationResponse
 
 API_PREFIX = "/" + settings.SERVICE_NAME

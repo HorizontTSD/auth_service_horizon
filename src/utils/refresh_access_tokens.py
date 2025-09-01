@@ -1,3 +1,4 @@
+# src/utils/refresh_access_tokens.py
 import uuid
 from datetime import datetime, timedelta
 
@@ -7,10 +8,16 @@ from sqlalchemy import update
 from src.core.configuration.config import settings
 from src.models.user_models import RefreshToken
 
-
-async def create_access_token(user_id: int):
+async def create_access_token(user_id: int, organization_id: int, roles: list[str] = None):
     expires = datetime.now() + timedelta(minutes=15)
-    to_encode = {"sub": str(user_id), "exp": expires, "type": "access"}
+    to_encode = {
+        "sub": str(user_id),
+        "organization_id": organization_id,
+        "exp": expires,
+        "type": "access"
+    }
+    if roles:
+        to_encode["roles"] = roles 
     return jwt.encode(to_encode, settings.JWT_SECRET_KEY, algorithm=settings.JWT_ALGORITHM)
 
 async def create_refresh_token(user_id: int) -> tuple[str, str]:

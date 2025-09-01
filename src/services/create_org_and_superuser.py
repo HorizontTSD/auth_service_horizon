@@ -1,8 +1,13 @@
+# src/services/create_org_and_superuser.py
+
 from logging import getLogger
 from fastapi import HTTPException, status
 from sqlalchemy import select, update, insert
 from sqlalchemy.exc import DatabaseError, SQLAlchemyError
 
+from src.utils.refresh_access_tokens import create_access_token, create_refresh_token
+from src.models.user_models import RefreshToken
+from datetime import datetime, timedelta
 from src.session import db_manager
 from src.models.user_models import Organization, User, Role, UserRoles
 from src.schemas import RegistrationRequest
@@ -90,12 +95,28 @@ async def create_org_and_superuser(payload: RegistrationRequest) -> dict:
             superuser = await create_superuser(session, org.id, payload)
             await assign_owner(session, org.id, superuser.id)
             await assign_superuser_role(session, superuser.id)
+
+            access_token = await create_access_token(
+                superuser.id,
+                org.id,
+                ["superuser"]
+            )
+            refresh_token, refresh_jti = await create_refresh_token(superuser.id)
+
+            db_refresh_token = RefreshToken(
+                user_id=superuser.id,
+                token=refresh_token,
+                jti=refresh_jti,
+                expires_at=datetime.utcnow() + timedelta(days=30)
+            )
+            session.add(db_refresh_token)
             await session.commit()
 
             return {
-                "status": "success",
                 "organization_id": org.id,
                 "superuser_id": superuser.id,
+                "access_token": access_token,
+                "refresh_token": refresh_token,
                 "message": "Организация и суперюзер успешно зарегистрированы"
             }
 
