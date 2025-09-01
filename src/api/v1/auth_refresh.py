@@ -13,7 +13,7 @@ from src.core.configuration.config import settings
 from src.models.user_models import RefreshToken as DBRefreshToken
 from src.utils.refresh_access_tokens import create_access_token, create_refresh_token
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(tags=["Auth"])
 
 
 @router.post(
