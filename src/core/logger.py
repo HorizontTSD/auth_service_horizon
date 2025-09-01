@@ -50,8 +50,8 @@ class LoggerManager:
         except Exception as e:
             print(f"Failed to setup {handler_type} file handler: {e}")
 
-    def setup_logger(self, name: str = "horizon_forecast") -> logging.Logger:
-        logger = logging.getLogger(name)
+    def setup_logger(self) -> logging.Logger:
+        logger = logging.getLogger()
         
         for handler in logger.handlers[:]:
             logger.removeHandler(handler)
