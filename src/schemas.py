@@ -66,7 +66,6 @@ class UserAuthResponse(BaseModel):
     permissions: list[str]
 
 
-
 class AuthResponse(BaseModel):
     access_token: str
     refresh_token: str
@@ -74,3 +73,8 @@ class AuthResponse(BaseModel):
     expires_in: int
     refresh_expires_in: int
     user: UserAuthResponse
+
+
+class RolesResponse(BaseModel):
+    roles: list[str]
+

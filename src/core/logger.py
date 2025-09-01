@@ -43,10 +43,8 @@ class LoggerManager:
         except Exception as e:
             print(f"Failed to setup {handler_type} file handler: {e}")
 
-    def setup_logger(self, name: str = None) -> logging.Logger:
-        # Если имя не передано, используем SERVICE_NAME
-        logger_name = name or settings.SERVICE_NAME
-        logger = logging.getLogger(logger_name)
+    def setup_logger(self) -> logging.Logger:
+        logger = logging.getLogger()
         
         for handler in logger.handlers[:]:
             logger.removeHandler(handler)
