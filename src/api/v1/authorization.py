@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body
 
 from services.auth_service import auth
-from src.schemas import AuthRequest, AuthResponse
+from src.schemas import AuthRequest, AuthResponse, LogoutRequest, LogoutResponse
 
 router = APIRouter()
 
@@ -59,3 +59,33 @@ async def auth_user(
         """
         
         return await auth(login=auth_data.login, password=auth_data.password)
+
+@router.post('/', response_model=LogoutRequest)
+async def logout_user(
+            logout_data: LogoutRequest = Body(..., example={
+                    'refresh_token': 'eyCshr3bGciOihfd4S1NsaIsInR5da25CLKpikpXVCJ9.eyJzdWIiOi.....'
+            })
+        ) -> LogoutResponse:
+        """
+        Эндпоинт для инвалидации refresh-токена пользователя
+
+        Description:
+        - Предназначен для фронтэнда для инвалидации refresh-токена пользователя
+
+        Returns:
+        - **JSON**:
+            - `detail`: детали ответа
+
+        Example Response:
+        ```json
+            {
+                "detail": "Logout successful",
+            }
+        ```
+
+        Raises:
+        - **HTTPException 401**: При невалидном или уже отозванном токене
+        - **HTTPException 500**: При ошибке создания JWT токенов
+        - **HTTPException 500**: При ошибке выполнения SQL запросов
+        - **HTTPException 503**: При ошибке подключения к базе данных
+        """
