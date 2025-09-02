@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 
 import jwt
 from fastapi import HTTPException, status
-from sqlalchemy import update, select
+from sqlalchemy import select, update
 
 from src.core.configuration.config import settings
 from src.models.user_models import RefreshToken
@@ -35,7 +35,25 @@ async def revoke_existing_tokens(session, user_id: int):
     )
     await session.execute(stmt)
 
+async def revoke_one_token(session, refresh_token):
+    """Отзывает один валидный токен"""
+    try:
+        await validate_token(session, refresh_token)
+    except HTTPException:
+        raise
+
+
+    stmt = (
+        update(RefreshToken)
+        .where(
+            RefreshToken.token == refresh_token
+        )
+        .values(revoked=True)
+    )
+    await session.execute(stmt)
+
 async def validate_token(session, refresh_token):
+    """Проверяет токен на валидность"""
     stmt = (
                 select(RefreshToken)
                 .where(RefreshToken.token==refresh_token)
@@ -51,6 +69,6 @@ async def validate_token(session, refresh_token):
     
     if token.revoked:
         raise HTTPException(
-            status_code=status.HTTP_200_UNAUTHORIZED,
+            status_code=status.HTTP_200_OK,
             detail='Токен уже инвалидирован'
         )

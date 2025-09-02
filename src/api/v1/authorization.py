@@ -1,12 +1,12 @@
 from fastapi import APIRouter, Body
 
-from services.auth_service import auth
+from services.auth_service import auth, logout
 from src.schemas import AuthRequest, AuthResponse, LogoutRequest, LogoutResponse
 
 router = APIRouter()
 
 
-@router.post('/', response_model=AuthResponse)
+@router.post('/login', response_model=AuthResponse)
 async def auth_user(
         auth_data: AuthRequest = Body(..., example={
                 'login': 'test_user',
@@ -53,14 +53,11 @@ async def auth_user(
         - **HTTPException 400**: При ошибке валидации входных данных
         - **HTTPException 401**: При неверных учётных данных
         - **HTTPException 401**: Если пользователь заблокирован, удалён или неактивен
-        - **HTTPException 500**: При ошибке создания JWT токенов
-        - **HTTPException 500**: При ошибке выполнения SQL запросов
-        - **HTTPException 503**: При ошибке подключения к базе данных
         """
         
         return await auth(login=auth_data.login, password=auth_data.password)
 
-@router.post('/', response_model=LogoutRequest)
+@router.post('/logout', response_model=LogoutResponse)
 async def logout_user(
             logout_data: LogoutRequest = Body(..., example={
                     'refresh_token': 'eyCshr3bGciOihfd4S1NsaIsInR5da25CLKpikpXVCJ9.eyJzdWIiOi.....'
@@ -84,8 +81,6 @@ async def logout_user(
         ```
 
         Raises:
-        - **HTTPException 401**: При невалидном или уже отозванном токене
-        - **HTTPException 500**: При ошибке создания JWT токенов
-        - **HTTPException 500**: При ошибке выполнения SQL запросов
-        - **HTTPException 503**: При ошибке подключения к базе данных
+        - **HTTPException 401**: При невалидном токене
         """
+        return await logout(refresh_token=logout_data.refresh_token)

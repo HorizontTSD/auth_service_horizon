@@ -3,14 +3,18 @@ from logging import getLogger
 
 import jwt
 from fastapi import HTTPException, status
-from src.core.security.password import verify_password
-from sqlalchemy import or_, select, update
-from sqlalchemy.exc import DatabaseError, SQLAlchemyError
+from sqlalchemy import or_, select
 
+from src.core.security.password import verify_password
 from src.models.user_models import RefreshToken, User
 from src.schemas import AuthResponse, LogoutResponse
 from src.session import db_manager
-from src.utils.refresh_access_tokens import create_access_token, create_refresh_token, revoke_existing_tokens, revoke_one_token
+from src.utils.refresh_access_tokens import (
+    create_access_token,
+    create_refresh_token,
+    revoke_existing_tokens,
+    revoke_one_token,
+)
 
 logger = getLogger(__name__)
 
@@ -65,69 +69,19 @@ async def auth(login: str, password: str) -> AuthResponse:
                 }
             }
     
-    except HTTPException as e:
-        logger.error(f"Ошибка: {e.detail}")
-        raise
-    
-    except DatabaseError:
-        # логируется в src/session.py
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail='Ошибка подключения к базе данных'
-        )
-    
-    except SQLAlchemyError as e:
-        logger.error(f"Ошибка выполнения запроса к базе данных: {e}") 
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='Ошибка выполнения запроса к базе данных'
-        )
-    
     except jwt.PyJWTError as e:
         logger.error(f"Ошибка создания токенов: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail='Ошибка создания токенов'
         )
-    
-    except Exception as e:
-        logger.error(f"Внутренняя ошибка сервера: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='Внутренняя ошибка сервера'
-        )
-    
+
 
 
 async def logout(refresh_token: str) -> LogoutResponse:
-    try:
-        async with db_manager.get_db_session() as session:
-            revoke_one_token(session, refresh_token)
-    
-    except DatabaseError:
-        # логируется в src/session.py
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail='Ошибка подключения к базе данных'
-        )
-    
-    except SQLAlchemyError as e:
-        logger.error(f"Ошибка выполнения запроса к базе данных: {e}") 
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='Ошибка выполнения запроса к базе данных'
-        )
-    
-    except jwt.PyJWTError as e:
-        logger.error(f"Ошибка создания токенов: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='Ошибка создания токенов'
-        )
-    
-    except Exception as e:
-        logger.error(f"Внутренняя ошибка сервера: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail='Внутренняя ошибка сервера'
-        )
+    async with db_manager.get_db_session() as session:
+        await revoke_one_token(session, refresh_token)
+        await session.commit()
+        return {
+            'detail': 'Выход выполнен успешно'
+        }
