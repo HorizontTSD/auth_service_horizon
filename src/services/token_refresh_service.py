@@ -2,7 +2,7 @@
 import logging
 from typing import Tuple
 
-from src.utils import jwt_utils
+from src.utils import jwt_utils, token_service
 from src.core.configuration.config import settings
 from datetime import datetime
 
@@ -29,7 +29,7 @@ async def refresh_tokens_logic(refresh_token_str: str) -> Tuple[str, str, int, i
         HTTPException: При проблемах с токеном (401) или БД (500).
     """
     try:
-        new_access_token, new_refresh_token = await jwt_utils.rotate_refresh_token(refresh_token_str)
+        new_access_token, new_refresh_token = await token_service.rotate_refresh_token(refresh_token_str)
 
         expires_in = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
         refresh_expires_in = settings.REFRESH_TOKEN_EXPIRE_DAYS * 24 * 60 * 60
@@ -76,7 +76,7 @@ async def rotate_access_token_only_logic(refresh_token_str: str) -> Tuple[str, i
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
 
         # 2. Проверяем refresh токен в БД
-        db_token = await jwt_utils.get_refresh_token_from_db(jti, user_id)
+        db_token = await token_service.get_refresh_token_from_db(jti, user_id)
         if not db_token:
             logger.warning(f"Refresh token with jti={jti} not found in DB for access-only rotation")
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token")
@@ -102,12 +102,8 @@ async def rotate_access_token_only_logic(refresh_token_str: str) -> Tuple[str, i
             roles_names = [role.name for role in user_obj.roles]
 
             # 4. Создаем новый access токен
-            new_access_token = await jwt_utils.create_access_token(
-                user_id=user_id,
-                organization_id=user_obj.organization_id,
-                roles=roles_names
-            )
-
+            new_access_token = await jwt_utils.create_access_token(user_id=user_id)
+            
         expires_in = settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
         
         logger.info(f"Access token successfully rotated (access-only) for user_id={user_id}")

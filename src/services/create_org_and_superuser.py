@@ -3,9 +3,8 @@
 from logging import getLogger
 from fastapi import HTTPException, status
 from sqlalchemy import select, update, insert
-from sqlalchemy.exc import DatabaseError, SQLAlchemyError
 
-from src.utils.refresh_access_tokens import create_access_token, create_refresh_token
+from src.utils.jwt_utils import create_access_token, create_refresh_token
 from src.models.user_models import RefreshToken
 from datetime import datetime, timedelta
 from src.session import db_manager
@@ -96,11 +95,8 @@ async def create_org_and_superuser(payload: RegistrationRequest) -> dict:
             await assign_owner(session, org.id, superuser.id)
             await assign_superuser_role(session, superuser.id)
 
-            access_token = await create_access_token(
-                superuser.id,
-                org.id,
-                ["superuser"]
-            )
+            access_token = await create_access_token(user_id=superuser.id)
+
             refresh_token, refresh_jti = await create_refresh_token(superuser.id)
 
             db_refresh_token = RefreshToken(
@@ -122,20 +118,3 @@ async def create_org_and_superuser(payload: RegistrationRequest) -> dict:
 
     except HTTPException:
         raise
-    except DatabaseError:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Ошибка подключения к базе данных"
-        )
-    except SQLAlchemyError as e:
-        logger.error(f"Ошибка выполнения запроса к базе данных: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Ошибка выполнения запроса к базе данных"
-        )
-    except Exception as e:
-        logger.error(f"Внутренняя ошибка сервера: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Внутренняя ошибка сервера"
-        )

@@ -1,6 +1,5 @@
 # src/api/v1/auth_refresh.py
 from fastapi import APIRouter, HTTPException, Depends, Body
-from sqlalchemy.exc import SQLAlchemyError
 
 from src.schemas import RefreshRequest, RefreshResponse
 from src.core.logger import logger
@@ -45,26 +44,15 @@ async def refresh_tokens(
     """
     refresh_token_str = request.refresh_token
 
-    try:
-        # Вызов сервисной логики
-        new_access_token, new_refresh_token, expires_in, refresh_expires_in = await token_refresh_service.refresh_tokens_logic(refresh_token_str)
+    new_access_token, new_refresh_token, expires_in, refresh_expires_in = \
+        await token_refresh_service.refresh_tokens_logic(refresh_token_str)
 
-        logger.info("Successfully refreshed tokens via service")
+    logger.info("Successfully refreshed tokens via service")
 
-        return {
-            "access_token": new_access_token,
-            "refresh_token": new_refresh_token,
-            "token_type": "Bearer",
-            "expires_in": expires_in,
-            "refresh_expires_in": refresh_expires_in,
-        }
-
-    except HTTPException:
-        # Пробрасываем HTTP-исключения из сервиса 
-        raise
-    except SQLAlchemyError as e:
-        logger.error(f"Database error during token refresh: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
-    except Exception as e:
-        logger.error(f"Unexpected error during token refresh: {e}", exc_info=True)
-        raise HTTPException(status_code=500, detail="Internal server error")
+    return {
+        "access_token": new_access_token,
+        "refresh_token": new_refresh_token,
+        "token_type": "Bearer",
+        "expires_in": expires_in,
+        "refresh_expires_in": refresh_expires_in,
+    }

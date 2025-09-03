@@ -51,9 +51,4 @@ async def register_organization_and_superuser(
         return result
     except HTTPException:
         raise
-    except Exception as e:
-        logger.error(f"Ошибка при регистрации: {e}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, 
-            detail="Не удалось зарегистрировать организацию"
-        )
+
