@@ -30,3 +30,6 @@ api_router.include_router(auth_user_router, prefix="/auth", tags=["Auth users"])
 # 7. Обновление токенов (refresh)
 from src.api.v1.auth_refresh import router as auth_refresh_router
 api_router.include_router(auth_refresh_router, prefix="/auth", tags=["Auth"])
+
+from src.api.v1.register_user import router as register_user_router
+api_router.include_router(register_user_router, prefix="/register", tags=["Register Users"])

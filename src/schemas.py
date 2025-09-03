@@ -78,3 +78,22 @@ class AuthResponse(BaseModel):
 class RolesResponse(BaseModel):
     roles: list[str]
 
+
+class RegisterUserRequest(BaseModel):
+    """
+    Схема для запроса на регистрацию нового пользователя в организации.
+    """
+    login: str
+    password: str
+    email: EmailStr
+    first_name: str
+    last_name: str
+    role: str 
+
+class RegisterUserResponse(BaseModel):
+    """
+    Схема для ответа на запрос регистрации нового пользователя.
+    """
+    success: bool
+    user_id: int
+    message: str

@@ -6,6 +6,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 import pandas as pd
 
 from src.core.configuration.config import settings
+from src.utils import jwt_utils
 import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
 
@@ -20,26 +21,14 @@ class JWTTokenValidator:
     async def __call__(self, credentials: HTTPAuthorizationCredentials = Depends(HTTPBearer())) -> Dict[str, Any]:
         token = credentials.credentials
         try:
-            payload = jwt.decode(
-                token,
-                settings.JWT_SECRET_KEY,
-                algorithms=[settings.JWT_ALGORITHM]
-            )
-            # Дополнительная проверка: токен должен быть access_token (можно добавить type в payload)
-            if payload.get("type") != "access":
-                raise HTTPException(status_code=401, detail="Invalid token type")
-
+            payload = jwt_utils.decode_jwt_token(token, expected_type="access")
             logger.info(f"JWT access token validated for user_id={payload['sub']}")
-            return payload  # содержит: sub, iat, exp, roles, organization_id и т.д.
-
-        except ExpiredSignatureError:
-            logger.warning("JWT token expired")
-            raise HTTPException(status_code=401, detail="Token expired")
-        except InvalidTokenError as e:
-            logger.warning(f"Invalid JWT token: {e}")
-            raise HTTPException(status_code=401, detail="Invalid token")
-        except Exception as e:
-            logger.error(f"Unexpected error during JWT validation: {e}")
+            return payload
+        
+        except HTTPException: 
+             raise
+        except Exception as e: 
+            logger.error(f"Unexpected error during JWT validation in JWTTokenValidator: {e}")
             raise HTTPException(status_code=500, detail="Internal token validation error")
 
 

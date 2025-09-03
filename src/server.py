@@ -40,7 +40,7 @@ app = FastAPI(
     docs_url=docs_url,
     openapi_url="/openapi.json",
     root_path=API_PREFIX,
-    dependencies=[]
+    dependencies=[Depends(static_token_validator)] if settings.VERIFY_TOKEN else []
 )
 
 @app.exception_handler(RequestValidationError)

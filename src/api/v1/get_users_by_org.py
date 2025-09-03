@@ -7,15 +7,14 @@ from src.schemas import UserResponse, GetUsersByOrgResponse
 from src.models.user_models import User, Role, Permission
 from src.core.logger import logger
 
-router = APIRouter()
+router = APIRouter(tags=["Users"])
 
 
 @router.get(
     "/{organization_id}/users",
     response_model=GetUsersByOrgResponse,
     summary="Get organization's users",
-    description="Возвращает список активных пользователей указанной организации с их ролями и разрешениями.",
-    tags=["Users"]
+    description="Возвращает список активных пользователей указанной организации с их ролями и разрешениями."
 )
 async def get_users_by_organization(
     organization_id: int,
@@ -32,32 +31,6 @@ async def get_users_by_organization(
 
     Parameters:
     - **organization_id** (integer, path): ID организации для получения списка пользователей
-
-    Returns:
-    - **JSON**:
-      - `users`: Список пользователей организации
-        - `login`: Логин пользователя
-        - `first_name`: Имя пользователя
-        - `last_name`: Фамилия пользователя
-        - `email`: Email пользователя
-        - `access_level`: Уровень доступа (роль) пользователя
-        - `permissions`: Список разрешений пользователя
-
-    Example Response:
-    ```json
-    {
-      "users": [
-        {
-          "login": "ivanov",
-          "first_name": "Иван",
-          "last_name": "Иванов",
-          "email": "ivanov@example.com",
-          "access_level": "admin",
-          "permissions": ["user.view", "user.edit", "report.view"]
-        }
-      ]
-    }
-    ```
 
     Raises:
     - **HTTPException 401**: Если пользователь не авторизован (нет валидного токена)
@@ -92,7 +65,8 @@ async def get_users_by_organization(
                 .where(
                     User.organization_id == organization_id,
                     User.is_deleted == False,
-                    User.is_active == True
+                    User.is_active == True,
+                    User.is_blocked == False
                 )
                 .order_by(User.created_at)
             )
@@ -120,8 +94,8 @@ async def get_users_by_organization(
                         first_name=u.first_name,
                         last_name=u.last_name,
                         email=u.email,
-                        access_level=access_level,
-                        permissions=list(set(permissions))  # Убираем дубликаты
+                        access_level=[role.name for role in u.roles][0] if u.roles else "user",
+                        permissions=list({perm.code for role in u.roles for perm in role.permissions})
                     )
                 )
 
