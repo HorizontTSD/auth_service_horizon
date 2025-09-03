@@ -72,3 +72,9 @@ async def validate_token(session, refresh_token):
             status_code=status.HTTP_200_OK,
             detail='Токен уже инвалидирован'
         )
+    
+    if token.expires_at < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_200_OK,
+            detail='У токена закончился срок действия'
+        )
