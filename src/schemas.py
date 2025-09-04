@@ -105,3 +105,20 @@ class LogoutRequest(BaseModel):
 
 class LogoutResponse(BaseModel):
     detail: str
+
+
+class UserStatusChangeResponse(BaseModel):
+    """
+    Схема для ответа на запрос по изменению статуса пользователя из организации.
+    """
+    success: bool
+    user_id: int
+    message: str
+
+
+class UserStatusChangeRequest(BaseModel):
+    """
+    Схема для ответа по изменению статуса пользователя из организации.
+    """
+    login_to_change: str
+

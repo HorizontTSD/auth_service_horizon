@@ -33,3 +33,16 @@ api_router.include_router(auth_refresh_router, prefix="/auth", tags=["Auth"])
 
 from src.api.v1.register_user import router as register_user_router
 api_router.include_router(register_user_router, prefix="/register", tags=["Register Users"])
+
+# 9. Удаление юзера
+from src.api.v1.delete_user import router as del_user
+api_router.include_router(del_user, prefix="/delete_user", tags=["Delete User From Org"])
+
+# 10. Блокировка юзера
+from src.api.v1.block_user import router as block_user
+api_router.include_router(block_user, prefix="/block_user", tags=["Block User From Org"])
+
+# 11. Разлокировка юзера
+from src.api.v1.unblock_user import router as unblock_user
+api_router.include_router(unblock_user, prefix="/unblock_user", tags=["Unblock User From Org"])
+
