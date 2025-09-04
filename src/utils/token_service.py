@@ -1,9 +1,16 @@
+# src/utils/token_service.py
 import logging
 from datetime import datetime, timedelta
 from fastapi import HTTPException, status
 from sqlalchemy import select, update
 
-from src.utils.jwt_utils import create_access_token, create_refresh_token, decode_jwt_token
+# Импортируем нужные функции из jwt_utils
+from src.utils.jwt_utils import (
+    create_access_token,
+    create_refresh_token,
+    decode_jwt_token,
+    # revoke_existing_tokens, # Если revoke_existing_tokens перенесена в jwt_utils, импортируем оттуда
+)
 from src.models.user_models import RefreshToken, User
 from src.session import db_manager
 from src.core.configuration.config import settings
@@ -137,7 +144,7 @@ async def rotate_refresh_token(old_refresh_token: str) -> tuple[str, str]:
                     detail="User data error",
                 )
 
-            await session.refresh(user_obj, ["roles"])  # загрузка ролей (для логики доступа)
+            await session.refresh(user_obj, ["roles"])  
             new_access_token_str = await create_access_token(user_id=user_id)
 
             return new_access_token_str, new_refresh_token_str
@@ -151,19 +158,41 @@ async def rotate_refresh_token(old_refresh_token: str) -> tuple[str, str]:
             detail="Error generating new tokens",
         )
 
+async def revoke_one_token(session, refresh_token: str):
+    """Отзывает один валидный токен"""
+    try:
+        await validate_token(session, refresh_token)
+    except HTTPException:
+        raise
 
-async def revoke_existing_tokens(session, user_id: int):
-    """Отзывает все активные refresh-токены пользователя."""
     stmt = (
         update(RefreshToken)
-        .where(
-            RefreshToken.user_id == user_id,
-            RefreshToken.revoked == False,
-            RefreshToken.expires_at > datetime.utcnow(),
-        )
+        .where(RefreshToken.token == refresh_token)
         .values(revoked=True)
     )
+    await session.execute(stmt)
+
+
+async def validate_token(session, refresh_token: str):
+    """Проверяет токен на валидность"""
+    stmt = select(RefreshToken).where(RefreshToken.token == refresh_token)
     result = await session.execute(stmt)
-    logger.debug(
-        f"Revoked {result.rowcount} existing refresh tokens for user_id={user_id}"
-    )
+    token = result.scalar_one_or_none()
+
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail='Невалидный токен'
+        )
+    
+    if token.revoked:
+        raise HTTPException(
+            status_code=status.HTTP_200_OK,
+            detail='Токен уже инвалидирован'
+        )
+    
+    if token.expires_at < datetime.utcnow():
+        raise HTTPException(
+            status_code=status.HTTP_200_OK,
+            detail='У токена закончился срок действия'
+        )

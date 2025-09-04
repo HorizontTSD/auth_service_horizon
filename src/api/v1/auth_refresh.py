@@ -6,7 +6,7 @@ from src.core.logger import logger
 from src.services import token_refresh_service
 from src.core.configuration.config import settings
 
-router = APIRouter(prefix="/auth", tags=["Auth"])
+router = APIRouter(tags=["Auth"])
 
 @router.post(
     "/refresh", 

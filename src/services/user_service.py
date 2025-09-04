@@ -1,7 +1,7 @@
 # src/services/user_service.py
 import logging
 from fastapi import HTTPException, status
-from sqlalchemy import select
+from sqlalchemy import select, insert # Добавлен импорт insert
 
 from src.core.security.password import hash_password
 from src.models.user_models import User, Role, UserRoles
@@ -54,8 +54,9 @@ async def create_user_in_organization(
             session.add(new_user)
             await session.flush()
 
-            user_role = UserRoles(user_id=new_user.id, role_id=role_obj.id)
-            session.add(user_role)
+            await session.execute(
+                insert(UserRoles).values(user_id=new_user.id, role_id=role_obj.id)
+            )
 
             await session.commit()
 

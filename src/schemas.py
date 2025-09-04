@@ -97,3 +97,11 @@ class RegisterUserResponse(BaseModel):
     success: bool
     user_id: int
     message: str
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: str
+
+
+class LogoutResponse(BaseModel):
+    detail: str

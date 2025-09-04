@@ -1,8 +1,11 @@
+# src/utils/jwt_utils.py
 import logging
 from datetime import datetime, timedelta
 import uuid
 import jwt
 from jwt import ExpiredSignatureError, InvalidTokenError
+from sqlalchemy import update
+from src.models.user_models import RefreshToken
 from fastapi import HTTPException, status
 
 from src.core.configuration.config import settings
@@ -94,3 +97,20 @@ def decode_jwt_token(token: str, expected_type: str = None) -> dict:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal token validation error",
         )
+
+
+async def revoke_existing_tokens(session, user_id: int):
+    """Отзывает все активные refresh-токены пользователя."""
+    stmt = (
+        update(RefreshToken)
+        .where(
+            RefreshToken.user_id == user_id,
+            RefreshToken.revoked == False,
+            RefreshToken.expires_at > datetime.utcnow(),
+        )
+        .values(revoked=True)
+    )
+    result = await session.execute(stmt)
+    logger.debug(
+        f"Revoked {result.rowcount} existing refresh tokens for user_id={user_id}"
+    )
