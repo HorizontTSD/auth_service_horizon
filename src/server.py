@@ -13,6 +13,7 @@ from src.core.configuration.config import settings
 from src.core.logger import logger
 from src.api.api_routers import api_router
 from src.core.token import token_validator
+from src.core.exceptions import register_exception_handlers
 
 
 API_PREFIX = "/" + settings.SERVICE_NAME
@@ -62,6 +63,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Регистрация централизованных обработчиков исключений
+register_exception_handlers(app)    
 
 # Подключение роутеров API
 app.include_router(api_router, prefix="/api/v1")

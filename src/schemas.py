@@ -50,3 +50,8 @@ class AuthResponse(BaseModel):
 class RolesResponse(BaseModel):
     roles: list[str]
 
+class LogoutRequest(BaseModel):
+    refresh_token: str
+
+class LogoutResponse(BaseModel):
+    detail: str
