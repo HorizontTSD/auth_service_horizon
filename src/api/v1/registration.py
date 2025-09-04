@@ -5,11 +5,11 @@ from src.services.create_org_and_superuser import create_org_and_superuser
 from src.core.logger import logger
 
 
-router = APIRouter(prefix="/register", tags=["Register Organization and Superuser"])
+router = APIRouter()
 
 
 @router.post(
-    "/",
+    "/org_and_superuser",
     status_code=status.HTTP_201_CREATED, 
     response_model=RegistrationResponse,
     summary="Register organization and superuser",

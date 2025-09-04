@@ -5,7 +5,10 @@ from sqlalchemy import select, insert
 
 from src.core.security.password import hash_password
 from src.models.user_models import User, Role, UserRoles
-from src.schemas import RegisterUserRequest, RegisterUserResponse, UserStatusChangeRequest, UserStatusChangeResponse
+from src.schemas import (
+    RegisterUserRequest, RegisterUserResponse, UserStatusChangeRequest,
+    UserStatusChangeResponse, UserResponse, GetUsersByOrgResponse
+)
 from src.session import db_manager
 
 logger = logging.getLogger(__name__)
@@ -139,3 +142,46 @@ async def change_user_status(
             user_id=user_obj.id,
             message=message
         )
+
+
+async def fetch_users_with_roles_and_permissions(organization_id: int) -> GetUsersByOrgResponse:
+    async with db_manager.get_db_session() as session:
+        result = await session.execute(
+            select(User.id).where(User.organization_id == organization_id).limit(1)
+        )
+        if not result.scalar():
+            raise HTTPException(
+                status_code=404,
+                detail=f"Организация с id={organization_id} не найдена"
+            )
+
+        result = await session.execute(
+            select(User)
+            .where(
+                User.organization_id == organization_id,
+                User.is_deleted == False,
+                User.is_active == True,
+                User.is_blocked == False
+            )
+            .order_by(User.created_at)
+        )
+        users = result.scalars().all()
+
+        users_response = []
+        for u in users:
+            await session.refresh(u, ["roles"])
+            for role in u.roles:
+                await session.refresh(role, ["permissions"])
+
+            users_response.append(
+                UserResponse(
+                    login=u.login,
+                    first_name=u.first_name,
+                    last_name=u.last_name,
+                    email=u.email,
+                    access_level=u.roles[0].name if u.roles else "user",
+                    permissions=list({perm.code for role in u.roles for perm in role.permissions})
+                )
+            )
+
+        return GetUsersByOrgResponse(users=users_response)
