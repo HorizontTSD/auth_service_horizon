@@ -20,7 +20,7 @@ class Settings:
 
         self.JWT_SECRET_KEY = env.str("JWT_SECRET_KEY", "") 
         self.JWT_ALGORITHM = env.str("JWT_ALGORITHM", "HS256")
-        self.ACCESS_TOKEN_EXPIRE_MINUTES = env.int("ACCESS_TOKEN_EXPIRE_MINUTES", 15)
+        self.ACCESS_TOKEN_EXPIRE_MINUTES = env.int("ACCESS_TOKEN_EXPIRE_MINUTES", 1)
         self.REFRESH_TOKEN_EXPIRE_DAYS = env.int("REFRESH_TOKEN_EXPIRE_DAYS", 30)
 
     def get_origins_urls(self):

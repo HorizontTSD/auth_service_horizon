@@ -32,6 +32,10 @@ api_router.include_router(get_users_by_org_router, prefix="/organizations", tags
 from src.api.v1.change_user_status import router as change_user_status_router
 api_router.include_router(change_user_status_router, prefix="/change_user_status", tags=["Change User Status in Org"])
 
-# 8. Проверка подключения
+# 8. Проверка access токена
+from src.api.v1.check_access_token import router as check_access_token
+api_router.include_router(check_access_token, prefix="/check", tags=["Check Access Token"])
+
+# 9. Проверка подключения
 from src.api.v1.get_tables_info import router as get_tables_info_router
 api_router.include_router(get_tables_info_router, prefix="/tables-info", tags=["Check Test Connection"])
