@@ -1,4 +1,4 @@
-# src/core/config.py
+# src/db_clients/config.py
 from environs import Env
 
 

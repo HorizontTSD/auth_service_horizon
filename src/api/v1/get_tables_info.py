@@ -1,3 +1,5 @@
+# src/api/v1/get_tables_info.py
+
 from fastapi import APIRouter, HTTPException
 from src.services.check_test_conn import check_tables_info
 from src.core.logger import logger
