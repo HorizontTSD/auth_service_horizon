@@ -8,7 +8,7 @@ from sqlalchemy import select
 
 from src.core.configuration.config import settings
 from src.utils import jwt_utils
-from src.models.user_models import User, Role
+from src.models.user_models import User, Role, RolePermissions, Permission, UserRoles
 from src.session import db_manager
 
 
@@ -49,6 +49,15 @@ class JWTTokenValidator:
                 payload["organization_id"] = user_obj.organization_id
                 payload["roles"] = [role.name for role in user_obj.roles]
 
+                permissions_query = (
+                    select(Permission.code)
+                    .join(RolePermissions, Permission.id == RolePermissions.c.permission_id)
+                    .join(Role, Role.id == RolePermissions.c.role_id)
+                    .join(UserRoles, UserRoles.c.role_id == Role.id)
+                    .where(UserRoles.c.user_id == user_id)
+                )
+                permissions_result = await session.execute(permissions_query)
+                payload["permissions"] = [row[0] for row in permissions_result.fetchall()]
 
             logger.info(f"JWT access token validated and data fetched for user_id={payload['sub']}")
             return payload
