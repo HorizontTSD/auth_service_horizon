@@ -120,3 +120,9 @@ class UserStatusChangeRequest(BaseModel):
     """
     login_to_change: str
 
+
+class AccessTokenResponse(BaseModel):
+    user_id: int
+    org_id: int
+    roles: List[str]
+    permissions: List[str]
