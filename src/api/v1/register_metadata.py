@@ -1,13 +1,42 @@
 from fastapi import APIRouter, HTTPException
 from src.services.permissions_mapper import fetch_permissions_mapping
-from src.schemas import PermissionsResponse
+from src.services.roles_service import get_all_roles
+from src.schemas import PermissionsResponse, RolesResponse
 from src.core.logger import logger
 
 router = APIRouter()
 
 
-@router.get("/", response_model=PermissionsResponse)
-async def func_get_permissions_mapping():
+@router.get('/roles_list', response_model=RolesResponse)
+async def get_roles() -> RolesResponse:
+    """
+    Эндпоинт для получения данных для выпадающего списка ролей.
+
+    Description:
+    - Предназначен для фронтэнда для получения значений для выпадающего списка.
+    - Возвращает `roles` — плоский список всех ролей, чтобы заполнить выпадающий список.
+
+    Returns:
+    - **JSON**:
+        - `roles`: список всех ролей для выпадающего списка.
+
+    Example Response:
+    ```json
+    {
+        "roles": ["user", "admin", ...]
+    }
+    ```
+
+    Raises:    
+    - **HTTPException 500**: При ошибке выполнения SQL запросов
+    - **HTTPException 503**: При ошибке подключения к базе данных
+    """
+
+    return await get_all_roles()
+
+
+@router.get("/permissions_list", response_model=PermissionsResponse)
+async def get_permissions_list():
     """
         Эндпоинт для получения данных для выпадающего списка разрешений.
 

@@ -4,7 +4,7 @@ from src.core.token import jwt_token_validator
 from src.schemas import RegisterUserRequest, RegisterUserResponse
 from src.services.user_service import create_user_in_organization
 
-router = APIRouter(tags=["Register Users"])
+router = APIRouter()
 
 @router.post("/user", response_model=RegisterUserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(
