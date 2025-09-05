@@ -10,8 +10,7 @@ from src.core.configuration.config import settings
 from src.utils import jwt_utils
 from src.models.user_models import User, Role
 from src.session import db_manager
-import jwt
-from jwt import ExpiredSignatureError, InvalidTokenError
+
 
 logger = logging.getLogger(__name__)
 
