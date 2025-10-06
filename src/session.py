@@ -11,7 +11,12 @@ logger = getLogger(__name__)
 
 class DBManager:
     def __init__(self, db_url: str):
-        self.engine = create_async_engine(db_url)
+        self.engine = create_async_engine(
+            db_url,
+            pool_pre_ping=True,             # проверяет соединение перед использованием
+            pool_recycle=1800,              # обновляет соединение каждые 30 мин
+            connect_args={"timeout": 160},
+        )
         self.session_factory = async_sessionmaker(self.engine, expire_on_commit=False)
         
     @asynccontextmanager
